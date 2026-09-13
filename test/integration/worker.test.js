@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { env, exports as worker } from 'cloudflare:workers'
+import { createEnvironment } from '../../src/orm/index.js'
+import { registry } from '../../src/models/index.js'
 
 async function request(path, init) {
   return worker.default.fetch(new Request(`https://mw-edge.test${path}`, init))
@@ -12,6 +14,44 @@ async function json(response) {
 beforeEach(async () => {
   await env.MW_DB.prepare('DELETE FROM res_partner').run()
   await env.MW_DB.prepare('DELETE FROM res_company').run()
+  it('enforces D1 foreign keys at the storage layer', async () => {
+    await expect(
+      env.MW_DB.prepare(
+        'INSERT INTO res_partner (name, active, company_id) VALUES (?, ?, ?)'
+      ).bind('Raw invalid FK', 1, 999999).run()
+    ).rejects.toThrow()
+
+    const count = await env.MW_DB.prepare(
+      'SELECT COUNT(*) AS count FROM res_partner'
+    ).first()
+
+    expect(count.count).toBe(0)
+  })
+
+  it('rolls back every statement when an atomic batch fails', async () => {
+    const mw = createEnvironment(env.MW_DB, registry)
+
+    await expect(
+      mw.atomic([
+        mw.statement(
+          'INSERT INTO res_company (name, active) VALUES (?, ?)',
+          'Atomic Company',
+          1
+        ),
+        mw.statement(
+          'INSERT INTO res_company (name, active) VALUES (?, ?)',
+          null,
+          1
+        )
+      ])
+    ).rejects.toThrow()
+
+    const count = await env.MW_DB.prepare(
+      'SELECT COUNT(*) AS count FROM res_company'
+    ).first()
+
+    expect(count.count).toBe(0)
+  })
 })
 
 describe('MW Edge Worker + D1 integration', () => {
