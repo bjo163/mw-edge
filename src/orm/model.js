@@ -1,7 +1,8 @@
-import { count as sqlCount, eq } from 'drizzle-orm'
+import { asc, count as sqlCount, desc, eq } from 'drizzle-orm'
 import { compileDomain } from './domain.js'
 import { ValidationError } from './errors.js'
 import {
+  SYSTEM_FIELDS,
   normalizeId,
   prepareValues,
   validateReadFields
@@ -25,6 +26,36 @@ function pagination(options = {}) {
   }
 
   return { limit, offset }
+}
+
+function orderBy(meta, table, order) {
+  if (!order) return [asc(table.id)]
+  if (typeof order !== 'string') throw new ValidationError('order must be a string')
+
+  const allowed = new Set([...SYSTEM_FIELDS, ...Object.keys(meta.fields)])
+  const terms = order.split(',').map(term => term.trim()).filter(Boolean)
+
+  if (terms.length === 0 || terms.length > 5) {
+    throw new ValidationError('order must contain between 1 and 5 fields')
+  }
+
+  return terms.map(term => {
+    const [field, direction = 'asc', ...extra] = term.split(/\s+/)
+
+    if (extra.length || !allowed.has(field)) {
+      throw new ValidationError(`Invalid order field: ${field}`, { field })
+    }
+
+    const normalized = direction.toLowerCase()
+    if (normalized !== 'asc' && normalized !== 'desc') {
+      throw new ValidationError(`Invalid order direction: ${direction}`, {
+        field,
+        direction
+      })
+    }
+
+    return normalized === 'desc' ? desc(table[field]) : asc(table[field])
+  })
 }
 
 export class Record {
@@ -180,11 +211,17 @@ export class ModelSet {
   async search(domain = [], options = {}) {
     const { limit, offset } = pagination(options)
     const where = compileDomain(this.definition.table, domain)
+    const ordering = orderBy(this.meta, this.definition.table, options.order)
     let query = this.db.select().from(this.definition.table)
 
     if (where) query = query.where(where)
 
-    const rows = await query.limit(limit).offset(offset).all()
+    const rows = await query
+      .orderBy(...ordering)
+      .limit(limit)
+      .offset(offset)
+      .all()
+
     return new RecordSet(this, rows.map(row => new Record(this, row)))
   }
 
