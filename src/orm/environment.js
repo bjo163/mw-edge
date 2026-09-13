@@ -14,14 +14,25 @@ export function createEnvironment(binding, registry) {
   const db = drizzle(binding)
   const cache = new Map()
 
-  return Object.freeze({
+  const environment = {
     db,
     registry,
     model(name) {
       if (!cache.has(name)) {
-        cache.set(name, new ModelSet(db, registry.get(name), registry.metadata(name)))
+        cache.set(
+          name,
+          new ModelSet(
+            db,
+            registry.get(name),
+            registry.metadata(name),
+            relatedModel => environment.model(relatedModel)
+          )
+        )
       }
+
       return cache.get(name)
     }
-  })
+  }
+
+  return Object.freeze(environment)
 }
