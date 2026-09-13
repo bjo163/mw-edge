@@ -25,6 +25,7 @@ export function parseCollectionQuery(query = {}) {
 
   const limit = query.limit === undefined ? 100 : Number(query.limit)
   const offset = query.offset === undefined ? 0 : Number(query.offset)
+  const order = query.order === undefined ? undefined : String(query.order).trim()
 
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000) {
     throw new ValidationError('limit must be an integer between 1 and 1000')
@@ -34,7 +35,7 @@ export function parseCollectionQuery(query = {}) {
     throw new ValidationError('offset must be a non-negative integer')
   }
 
-  return { domain, fields, limit, offset }
+  return { domain, fields, limit, offset, order }
 }
 
 export function paginationMeta({ total, limit, offset, returned }) {
