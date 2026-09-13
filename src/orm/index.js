@@ -4,6 +4,7 @@ export { createEnvironment } from './environment.js'
 export {
   MwError,
   ValidationError,
+  PayloadTooLargeError,
   NotFoundError,
   ConflictError
 } from './errors.js'
