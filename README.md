@@ -9,6 +9,7 @@ MW Edge is being built for Cloudflare Workers and D1 with a small, explicit core
 > **Primary database:** Cloudflare D1  
 > **HTTP layer:** Hono  
 > **SQL/query layer:** Drizzle
+> **Release gate:** GitHub Issue #1 — remote D1 + production deployment
 
 ---
 
@@ -116,7 +117,7 @@ Goal: establish the stable Odoo-inspired model API before adding platform featur
 - [x] Validate table binding during registry boot
 - [x] Add registry introspection API
 - [x] Add model metadata endpoint
-- [ ] Define reserved model names
+- [x] Define reserved model names
 - [x] Define reserved field names
 
 Target API:
@@ -382,13 +383,13 @@ Required:
 - [x] ordering
 - [x] total count
 - [x] pagination metadata
-- [ ] standardized error envelope
+- [x] standardized error envelope
 - [ ] standardized success envelope decision
 - [x] request body validation
 - [ ] response serialization layer
 - [x] maximum page size
 - [x] maximum request body size
-- [ ] safe model exposure policy
+- [x] safe model exposure policy
 - [ ] safe field exposure policy
 - [ ] API versioning strategy
 
@@ -408,21 +409,21 @@ Already available:
 
 Required:
 
-- [ ] normalized method names
-- [ ] strict method allowlist
-- [ ] per-model method exposure
+- [x] normalized method names
+- [x] strict method allowlist
+- [x] per-model method exposure
 - [ ] custom model methods
 - [ ] model-level RPC methods
 - [ ] record-level RPC methods
 - [x] structured validation errors
-- [ ] method introspection
+- [x] method introspection
 - [ ] API versioning
 
 ### 4.3 Error Contract
 
 - [x] define error codes
 - [x] distinguish validation errors
-- [ ] distinguish authorization errors
+- [x] distinguish authorization errors
 - [x] distinguish missing model
 - [x] distinguish missing record
 - [ ] distinguish conflict/unique violation
@@ -459,8 +460,8 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### Quality
 
-- [ ] ESLint
-- [ ] formatter
+- [x] ESLint
+- [x] formatter
 - [x] dependency audit
 - [ ] dead-code check
 - [ ] duplicate-code check
@@ -471,7 +472,7 @@ Goal: no ORM semantics should rely on manual testing.
 ### GitHub Actions
 
 - [x] install
-- [ ] lint
+- [x] lint
 - [x] unit tests
 - [x] integration tests
 - [x] build/runtime validation
