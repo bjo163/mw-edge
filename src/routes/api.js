@@ -28,7 +28,7 @@ export function createApi() {
     switch (method) {
       case 'search': {
         const records = await target.search(domain, { limit, offset })
-        return c.json(records.map(record => record.toJSON()))
+        return c.json(records.toJSON())
       }
       case 'search_read':
         return c.json(await target.searchRead(domain, fields, { limit, offset }))
@@ -42,6 +42,10 @@ export function createApi() {
       case 'create': {
         const record = await target.create(values ?? {})
         return c.json(record.toJSON(), 201)
+      }
+      case 'create_many': {
+        const records = await target.createMany(values ?? [])
+        return c.json(records.toJSON(), 201)
       }
       case 'write': {
         const record = await target.browse(id)
