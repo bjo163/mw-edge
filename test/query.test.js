@@ -3,10 +3,11 @@ import assert from 'node:assert/strict'
 
 import { paginationMeta, parseCollectionQuery } from '../src/routes/query.js'
 
-test('collection query parser handles domain, fields and pagination', () => {
+test('collection query parser handles domain, fields, ordering and pagination', () => {
   const result = parseCollectionQuery({
     domain: JSON.stringify([['active', '=', true]]),
     fields: 'id,name,email',
+    order: 'name desc,id asc',
     limit: '20',
     offset: '40'
   })
@@ -14,6 +15,7 @@ test('collection query parser handles domain, fields and pagination', () => {
   assert.deepEqual(result, {
     domain: [['active', '=', true]],
     fields: ['id', 'name', 'email'],
+    order: 'name desc,id asc',
     limit: 20,
     offset: 40
   })
