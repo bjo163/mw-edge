@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { NotFoundError, ValidationError } from '../orm/index.js'
+import { paginationMeta, parseCollectionQuery } from './query.js'
 
 function missingRecord(model, id) {
   throw new NotFoundError(`Record not found: ${model}(${id})`, { model, id })
@@ -65,8 +66,23 @@ export function createApi() {
   })
 
   api.get('/:model', async c => {
-    const model = c.get('mw').model(c.req.param('model'))
-    return c.json(await model.searchRead([], []))
+    const target = c.get('mw').model(c.req.param('model'))
+    const query = parseCollectionQuery(c.req.query())
+    const data = await target.searchRead(query.domain, query.fields, {
+      limit: query.limit,
+      offset: query.offset
+    })
+    const total = await target.count(query.domain)
+
+    return c.json({
+      data,
+      meta: paginationMeta({
+        total,
+        limit: query.limit,
+        offset: query.offset,
+        returned: data.length
+      })
+    })
   })
 
   api.get('/:model/:id', async c => {
