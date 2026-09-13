@@ -32,6 +32,16 @@ test('domain compiler supports set and null operators', () => {
   assert.ok(compileDomain(partner, [['id', 'in', []]]))
 })
 
+test('domain compiler supports nested prefix expressions', () => {
+  assert.ok(compileDomain(partner, [
+    '&',
+    ['id', '>', 0],
+    '|',
+    ['name', '=', 'A'],
+    ['company_id', '=', 1]
+  ]))
+})
+
 test('domain compiler rejects malformed and excessive input', () => {
   assert.throws(
     () => compileDomain(partner, [['missing', '=', 1]]),
