@@ -1,8 +1,16 @@
 import { ValidationError } from './errors.js'
 
 export const SYSTEM_FIELDS = Object.freeze(['id', 'created_at', 'updated_at'])
+export const RESERVED_MODEL_NAMES = Object.freeze([
+  'mw.model',
+  'mw.field',
+  'mw.registry'
+])
+
 const SYSTEM_FIELD_SET = new Set(SYSTEM_FIELDS)
+const RESERVED_MODEL_SET = new Set(RESERVED_MODEL_NAMES)
 const MODEL_NAME = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/
+const API_METHOD = /^[a-z][a-z0-9_]*$/
 const SUPPORTED_TYPES = new Set([
   'char',
   'text',
@@ -29,6 +37,42 @@ function defaultValue(field) {
 function isMissing(value, field) {
   if (value === undefined || value === null) return true
   return (field.type === 'char' || field.type === 'text') && value === ''
+}
+
+function normalizeApi(model) {
+  if (model._api === undefined) {
+    return Object.freeze({
+      rest: false,
+      rpc: Object.freeze([])
+    })
+  }
+
+  if (!isObject(model._api)) {
+    throw new ValidationError(`Model ${model._name} _api must be an object`)
+  }
+
+  const rest = model._api.rest === true
+  const rpc = model._api.rpc ?? []
+
+  if (!Array.isArray(rpc)) {
+    throw new ValidationError(`Model ${model._name} _api.rpc must be an array`)
+  }
+
+  const methods = [...new Set(rpc)]
+
+  for (const method of methods) {
+    if (typeof method !== 'string' || !API_METHOD.test(method)) {
+      throw new ValidationError(`Invalid RPC method exposure: ${method}`, {
+        model: model._name,
+        method
+      })
+    }
+  }
+
+  return Object.freeze({
+    rest,
+    rpc: Object.freeze(methods)
+  })
 }
 
 function validateSelection(field, value, name) {
@@ -91,6 +135,12 @@ export function validateModelDefinition(model) {
     throw new ValidationError('Model _name must use dotted lowercase notation', { model: model?._name })
   }
 
+  if (RESERVED_MODEL_SET.has(model._name)) {
+    throw new ValidationError(`Model name is reserved by MW Edge: ${model._name}`, {
+      model: model._name
+    })
+  }
+
   if (!isObject(model.table)) {
     throw new ValidationError(`Model ${model._name} requires a table binding`)
   }
@@ -138,7 +188,8 @@ export function validateModelDefinition(model) {
   return Object.freeze({
     name: model._name,
     description: model._description ?? model._name,
-    fields: Object.freeze(normalizedFields)
+    fields: Object.freeze(normalizedFields),
+    api: normalizeApi(model)
   })
 }
 
