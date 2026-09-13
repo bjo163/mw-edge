@@ -14,6 +14,12 @@ export class ValidationError extends MwError {
   }
 }
 
+export class PayloadTooLargeError extends MwError {
+  constructor(message = 'Request body is too large', details) {
+    super(message, { code: 'PAYLOAD_TOO_LARGE', status: 413, details })
+  }
+}
+
 export class NotFoundError extends MwError {
   constructor(message, details) {
     super(message, { code: 'NOT_FOUND', status: 404, details })
