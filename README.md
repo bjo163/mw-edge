@@ -335,7 +335,7 @@ await partner.read([
 - [ ] inverse-field validation
 - [ ] lazy relation lookup
 - [ ] relation serialization
-- [ ] pagination
+- [x] pagination
 - [ ] nested reads
 
 ### 3.3 Many2many
@@ -375,18 +375,18 @@ Already available:
 
 Required:
 
-- [ ] query-string domain support
-- [ ] field selection
-- [ ] limit
-- [ ] offset
+- [x] query-string domain support
+- [x] field selection
+- [x] limit
+- [x] offset
 - [ ] ordering
-- [ ] total count
-- [ ] pagination metadata
+- [x] total count
+- [x] pagination metadata
 - [ ] standardized error envelope
 - [ ] standardized success envelope decision
 - [ ] request body validation
 - [ ] response serialization layer
-- [ ] maximum page size
+- [x] maximum page size
 - [ ] maximum request body size
 - [ ] safe model exposure policy
 - [ ] safe field exposure policy
@@ -455,7 +455,7 @@ Goal: no ORM semantics should rely on manual testing.
 - [ ] RPC CRUD test
 - [ ] transaction test
 - [ ] foreign-key behavior test
-- [ ] pagination test
+- [x] pagination test
 
 ### Quality
 
@@ -512,7 +512,7 @@ Goal: no ORM semantics should rely on manual testing.
 - [ ] input validation
 - [ ] output serialization
 - [x] consistent errors
-- [ ] pagination
+- [x] pagination
 - [x] request IDs
 
 ### Quality
@@ -813,7 +813,7 @@ Checklist:
 - [ ] authenticated client
 - [ ] model client
 - [ ] typed response option
-- [ ] pagination helpers
+- [x] pagination helpers
 - [ ] auth helpers
 - [ ] storage helpers
 
@@ -929,7 +929,7 @@ Current fields:
 ```text
 GET    /api/models
 GET    /api/models/:model
-GET    /api/res.partner
+GET    /api/res.partner?fields=id,name&limit=20&offset=0
 GET    /api/res.partner/:id
 POST   /api/res.partner
 PATCH  /api/res.partner/:id
