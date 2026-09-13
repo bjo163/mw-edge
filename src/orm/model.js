@@ -69,6 +69,85 @@ export class Record {
   }
 }
 
+export class RecordSet {
+  constructor(model, records = []) {
+    this.model = model
+    this.records = Object.freeze([...records])
+  }
+
+  get length() {
+    return this.records.length
+  }
+
+  get ids() {
+    return this.records.map(record => record.id)
+  }
+
+  [Symbol.iterator]() {
+    return this.records[Symbol.iterator]()
+  }
+
+  at(index) {
+    return this.records.at(index) ?? null
+  }
+
+  first() {
+    return this.at(0)
+  }
+
+  map(callback) {
+    return this.records.map(callback)
+  }
+
+  mapped(fieldOrCallback) {
+    if (typeof fieldOrCallback === 'function') {
+      return this.records.map(fieldOrCallback)
+    }
+
+    if (typeof fieldOrCallback !== 'string' || !fieldOrCallback) {
+      throw new ValidationError('mapped() expects a field name or callback')
+    }
+
+    return this.records.map(record => record[fieldOrCallback])
+  }
+
+  filtered(callback) {
+    if (typeof callback !== 'function') {
+      throw new ValidationError('filtered() expects a callback')
+    }
+
+    return new RecordSet(this.model, this.records.filter(callback))
+  }
+
+  ensureOne() {
+    if (this.records.length !== 1) {
+      throw new ValidationError('Expected exactly one record', {
+        count: this.records.length
+      })
+    }
+
+    return this.records[0]
+  }
+
+  async write(values) {
+    for (const record of this.records) {
+      await record.write(values)
+    }
+    return true
+  }
+
+  async unlink() {
+    for (const record of this.records) {
+      await record.unlink()
+    }
+    return true
+  }
+
+  toJSON() {
+    return this.records.map(record => record.toJSON())
+  }
+}
+
 export class ModelSet {
   constructor(db, definition, meta) {
     this.db = db
@@ -84,7 +163,7 @@ export class ModelSet {
     if (where) query = query.where(where)
 
     const rows = await query.limit(limit).offset(offset).all()
-    return rows.map(row => new Record(this, row))
+    return new RecordSet(this, rows.map(row => new Record(this, row)))
   }
 
   async searchRead(domain = [], fields = [], options = {}) {
@@ -116,6 +195,27 @@ export class ModelSet {
       .all()
 
     return new Record(this, rows[0])
+  }
+
+  async createMany(valuesList) {
+    if (!Array.isArray(valuesList)) {
+      throw new ValidationError('createMany() expects an array of values')
+    }
+
+    if (valuesList.length === 0) {
+      return new RecordSet(this)
+    }
+
+    const prepared = valuesList.map(values =>
+      prepareValues(this.meta, values, { mode: 'create' })
+    )
+
+    const rows = await this.db.insert(this.definition.table)
+      .values(prepared)
+      .returning()
+      .all()
+
+    return new RecordSet(this, rows.map(row => new Record(this, row)))
   }
 
   async count(domain = []) {
