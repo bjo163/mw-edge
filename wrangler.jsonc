@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mw-edge",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-13",
+  "d1_databases": [
+    {
+      "binding": "MW_DB",
+      "database_name": "mw-edge-dev",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
