@@ -86,7 +86,7 @@ Goal: a minimal Cloudflare-native project that runs locally and can be deployed 
 - [ ] Verify remote D1 migration
 - [ ] Verify production `wrangler deploy`
 - [ ] Add separate dev/prod environment configuration
-- [ ] Add deterministic environment validation on startup
+- [x] Add deterministic environment validation on startup
 
 ### Phase 0 Definition of Done
 
@@ -94,7 +94,7 @@ Goal: a minimal Cloudflare-native project that runs locally and can be deployed 
 - [ ] Local database can be created from migrations
 - [ ] Worker boots without runtime errors
 - [ ] Production deployment succeeds
-- [ ] Root endpoint returns runtime/version information
+- [x] Root endpoint returns runtime/version information
 
 ---
 
@@ -111,13 +111,13 @@ Goal: establish the stable Odoo-inspired model API before adding platform featur
 - [x] Reject unknown model names
 - [x] List registered model names
 - [x] Add `_description` metadata
-- [ ] Add immutable normalized model metadata
-- [ ] Validate model declaration during registry boot
-- [ ] Validate table binding during registry boot
-- [ ] Add registry introspection API
-- [ ] Add model metadata endpoint
+- [x] Add immutable normalized model metadata
+- [x] Validate model declaration during registry boot
+- [x] Validate table binding during registry boot
+- [x] Add registry introspection API
+- [x] Add model metadata endpoint
 - [ ] Define reserved model names
-- [ ] Define reserved field names
+- [x] Define reserved field names
 
 Target API:
 
@@ -140,23 +140,23 @@ Currently declared:
 
 Field behavior still required:
 
-- [ ] `required`
-- [ ] `default`
-- [ ] `readonly`
+- [x] `required`
+- [x] `default`
+- [x] `readonly`
 - [ ] `index`
 - [ ] `unique`
 - [ ] `help`
 - [ ] `label/string`
-- [ ] value type validation
-- [ ] selection value validation
-- [ ] unknown field rejection
-- [ ] field normalization
-- [ ] automatic defaults before create
-- [ ] automatic write validation
-- [ ] automatic create validation
-- [ ] immutable `id`
-- [ ] immutable create timestamp
-- [ ] controlled update timestamp
+- [x] value type validation
+- [x] selection value validation
+- [x] unknown field rejection
+- [x] field normalization
+- [x] automatic defaults before create
+- [x] automatic write validation
+- [x] automatic create validation
+- [x] immutable `id`
+- [x] immutable create timestamp
+- [x] controlled update timestamp
 
 Future fields:
 
@@ -190,17 +190,17 @@ Implemented:
 
 Required before ORM MVP is stable:
 
-- [ ] `read(fields)`
+- [x] `read(fields)`
 - [ ] multi-record `write()`
 - [ ] multi-record `unlink()`
 - [ ] multi-create
-- [ ] explicit `exists()`
+- [x] explicit `exists()`
 - [ ] deterministic return contracts
 - [ ] consistent empty-result behavior
-- [ ] consistent ID coercion rules
-- [ ] validate values before SQL execution
-- [ ] reject writes to unknown fields
-- [ ] reject writes to protected fields
+- [x] consistent ID coercion rules
+- [x] validate values before SQL execution
+- [x] reject writes to unknown fields
+- [x] reject writes to protected fields
 - [ ] transaction helper
 - [ ] atomic multi-operation transaction
 - [ ] lifecycle hooks
@@ -262,20 +262,20 @@ Current supported operators:
 
 Still required:
 
-- [ ] `not in`
-- [ ] `not ilike`
-- [ ] unary NOT `!`
-- [ ] `is null`
-- [ ] `is not null`
+- [x] `not in`
+- [x] `not ilike`
+- [x] unary NOT `!`
+- [x] `is null`
+- [x] `is not null`
 - [ ] boolean normalization
 - [ ] date/datetime normalization
 - [ ] field-aware value coercion
-- [ ] invalid operator diagnostics
-- [ ] invalid prefix-expression diagnostics
+- [x] invalid operator diagnostics
+- [x] invalid prefix-expression diagnostics
 - [ ] nested expression tests
-- [ ] empty `in` behavior
+- [x] empty `in` behavior
 - [ ] SQL parameter-safety tests
-- [ ] max domain complexity guard
+- [x] max domain complexity guard
 - [ ] query complexity budget
 
 Example:
@@ -306,7 +306,7 @@ Current state:
 
 - [x] `Many2one` field metadata
 - [x] D1 foreign key example for `res.partner.company_id`
-- [ ] verify comodel exists at registry boot
+- [x] verify comodel exists at registry boot
 - [ ] validate referenced ID
 - [ ] relation-aware serialization
 - [ ] optional relation expansion
@@ -419,15 +419,15 @@ Required:
 
 ### 4.3 Error Contract
 
-- [ ] define error codes
-- [ ] distinguish validation errors
+- [x] define error codes
+- [x] distinguish validation errors
 - [ ] distinguish authorization errors
-- [ ] distinguish missing model
-- [ ] distinguish missing record
+- [x] distinguish missing model
+- [x] distinguish missing record
 - [ ] distinguish conflict/unique violation
-- [ ] hide internal SQL/runtime details
-- [ ] attach request ID
-- [ ] structured logs
+- [x] hide internal SQL/runtime details
+- [x] attach request ID
+- [x] structured logs
 
 ---
 
@@ -437,14 +437,14 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### Unit Tests
 
-- [ ] registry tests
-- [ ] field declaration tests
-- [ ] field validation tests
-- [ ] domain compiler tests
+- [x] registry tests
+- [x] field declaration tests
+- [x] field validation tests
+- [x] domain compiler tests
 - [ ] CRUD tests
 - [ ] record tests
 - [ ] relation tests
-- [ ] error contract tests
+- [x] error contract tests
 
 ### Integration Tests
 
@@ -460,7 +460,7 @@ Goal: no ORM semantics should rely on manual testing.
 
 - [ ] ESLint
 - [ ] formatter
-- [ ] dependency audit
+- [x] dependency audit
 - [ ] dead-code check
 - [ ] duplicate-code check
 - [ ] bundle-size tracking
@@ -469,12 +469,12 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### GitHub Actions
 
-- [ ] install
+- [x] install
 - [ ] lint
-- [ ] unit tests
+- [x] unit tests
 - [ ] integration tests
 - [ ] build/runtime validation
-- [ ] dependency audit
+- [x] dependency audit
 - [ ] migration validation
 - [ ] branch protection
 - [ ] required checks before merge
@@ -495,13 +495,13 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### ORM
 
-- [ ] model registry validated
-- [ ] field validation implemented
-- [ ] defaults implemented
-- [ ] required fields implemented
+- [x] model registry validated
+- [x] field validation implemented
+- [x] defaults implemented
+- [x] required fields implemented
 - [ ] CRUD contract stable
 - [ ] record/recordset contract stable
-- [ ] domain compiler tested
+- [x] domain compiler tested
 - [ ] Many2one usable end-to-end
 
 ### API
@@ -510,15 +510,15 @@ Goal: no ORM semantics should rely on manual testing.
 - [ ] RPC CRUD tested
 - [ ] input validation
 - [ ] output serialization
-- [ ] consistent errors
+- [x] consistent errors
 - [ ] pagination
-- [ ] request IDs
+- [x] request IDs
 
 ### Quality
 
-- [ ] automated tests
+- [x] automated tests
 - [ ] CI green
-- [ ] no critical dependency vulnerabilities
+- [x] no critical dependency vulnerabilities
 - [ ] README setup verified from clean clone
 - [ ] example app works
 
@@ -927,6 +927,7 @@ Current fields:
 
 ```text
 GET    /api/models
+GET    /api/models/:model
 GET    /api/res.partner
 GET    /api/res.partner/:id
 POST   /api/res.partner
@@ -1029,10 +1030,10 @@ MW Edge should stay small and predictable.
 - [x] explicit model registry
 - [x] D1-first MVP
 - [ ] fail closed on authorization
-- [ ] validate at boundaries
+- [x] validate at boundaries
 - [ ] avoid hidden global state
 - [ ] avoid hardcoded tenant/database IDs
-- [ ] avoid magic that cannot be introspected
+- [x] avoid magic that cannot be introspected
 - [ ] keep storage behind an adapter boundary
 - [ ] make migrations deterministic
 - [ ] make every public contract testable
