@@ -1,4 +1,4 @@
-import { NotFoundError, ValidationError } from './errors.js'
+import { AccessError, NotFoundError, ValidationError } from './errors.js'
 import { validateModelDefinition } from './validation.js'
 
 export class ModelRegistry {
@@ -48,17 +48,47 @@ export class ModelRegistry {
     return meta
   }
 
+  assertRest(name) {
+    const meta = this.metadata(name)
+
+    if (!meta.api.rest) {
+      throw new AccessError(`REST access is disabled for model: ${name}`, { model: name })
+    }
+
+    return meta
+  }
+
+  assertRpc(name, method) {
+    const meta = this.metadata(name)
+
+    if (!meta.api.rpc.includes(method)) {
+      throw new AccessError(`RPC method is not exposed: ${name}.${method}`, {
+        model: name,
+        method
+      })
+    }
+
+    return meta
+  }
+
   describe(name) {
     const meta = this.metadata(name)
     return {
       name: meta.name,
       description: meta.description,
-      fields: meta.fields
+      fields: meta.fields,
+      api: meta.api
     }
   }
 
   describeAll() {
     return this.names().map(name => this.describe(name))
+  }
+
+  describeApi() {
+    return this.names()
+      .map(name => this.describe(name))
+      .filter(model => model.api.rest || model.api.rpc.length > 0)
   }
 
   has(name) {
