@@ -44,7 +44,7 @@ export class Record {
   }
 
   async write(values) {
-    const prepared = prepareValues(this.model.meta, values, { mode: 'write' })
+    const prepared = await this.model.prepare(values, 'write')
     const next = { ...prepared, updated_at: new Date() }
 
     await this.model.db.update(this.model.definition.table)
@@ -149,10 +149,32 @@ export class RecordSet {
 }
 
 export class ModelSet {
-  constructor(db, definition, meta) {
+  constructor(db, definition, meta, resolveModel) {
     this.db = db
     this.definition = definition
     this.meta = meta
+    this.resolveModel = resolveModel
+  }
+
+  async prepare(values, mode) {
+    const prepared = prepareValues(this.meta, values, { mode })
+    await this.validateRelations(prepared)
+    return prepared
+  }
+
+  async validateRelations(values) {
+    for (const [name, field] of Object.entries(this.meta.fields)) {
+      if (field.type !== 'many2one' || !(name in values) || values[name] === null) continue
+
+      const related = this.resolveModel?.(field.comodel)
+
+      if (!related || !(await related.exists(values[name]))) {
+        throw new ValidationError(
+          `Related record not found: ${field.comodel}(${values[name]})`,
+          { field: name, comodel: field.comodel, id: values[name] }
+        )
+      }
+    }
   }
 
   async search(domain = [], options = {}) {
@@ -188,7 +210,7 @@ export class ModelSet {
   }
 
   async create(values) {
-    const prepared = prepareValues(this.meta, values, { mode: 'create' })
+    const prepared = await this.prepare(values, 'create')
     const rows = await this.db.insert(this.definition.table)
       .values(prepared)
       .returning()
@@ -206,9 +228,11 @@ export class ModelSet {
       return new RecordSet(this)
     }
 
-    const prepared = valuesList.map(values =>
-      prepareValues(this.meta, values, { mode: 'create' })
-    )
+    const prepared = []
+
+    for (const values of valuesList) {
+      prepared.push(await this.prepare(values, 'create'))
+    }
 
     const rows = await this.db.insert(this.definition.table)
       .values(prepared)
