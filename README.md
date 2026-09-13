@@ -81,7 +81,7 @@ Goal: a minimal Cloudflare-native project that runs locally and can be deployed 
 - [x] Add health/root endpoint
 - [ ] Create real Cloudflare D1 database
 - [ ] Replace placeholder `database_id`
-- [ ] Verify local D1 migration
+- [x] Verify local D1 migration
 - [ ] Verify `wrangler dev`
 - [ ] Verify remote D1 migration
 - [ ] Verify production `wrangler deploy`
@@ -91,8 +91,8 @@ Goal: a minimal Cloudflare-native project that runs locally and can be deployed 
 ### Phase 0 Definition of Done
 
 - [ ] Fresh clone can run with documented commands
-- [ ] Local database can be created from migrations
-- [ ] Worker boots without runtime errors
+- [x] Local database can be created from migrations
+- [x] Worker boots without runtime errors
 - [ ] Production deployment succeeds
 - [x] Root endpoint returns runtime/version information
 
@@ -196,7 +196,7 @@ Required before ORM MVP is stable:
 - [x] multi-create
 - [x] explicit `exists()`
 - [x] deterministic return contracts
-- [ ] consistent empty-result behavior
+- [x] consistent empty-result behavior
 - [x] consistent ID coercion rules
 - [x] validate values before SQL execution
 - [x] reject writes to unknown fields
@@ -272,9 +272,9 @@ Still required:
 - [ ] field-aware value coercion
 - [x] invalid operator diagnostics
 - [x] invalid prefix-expression diagnostics
-- [ ] nested expression tests
+- [x] nested expression tests
 - [x] empty `in` behavior
-- [ ] SQL parameter-safety tests
+- [x] SQL parameter-safety tests
 - [x] max domain complexity guard
 - [ ] query complexity budget
 
@@ -313,7 +313,7 @@ Current state:
 - [ ] relation field selection
 - [ ] relation-aware domain queries
 - [ ] relation deletion policy
-- [ ] clear nullability behavior
+- [x] clear nullability behavior
 
 Example target:
 
@@ -444,7 +444,7 @@ Goal: no ORM semantics should rely on manual testing.
 - [x] domain compiler tests
 - [ ] CRUD tests
 - [x] record tests
-- [ ] relation tests
+- [x] relation tests
 - [x] error contract tests
 
 ### Integration Tests
@@ -466,7 +466,7 @@ Goal: no ORM semantics should rely on manual testing.
 - [ ] duplicate-code check
 - [ ] bundle-size tracking
 - [ ] runtime compatibility check
-- [ ] migration consistency check
+- [x] migration consistency check
 
 ### GitHub Actions
 
@@ -476,11 +476,32 @@ Goal: no ORM semantics should rely on manual testing.
 - [x] integration tests
 - [x] build/runtime validation
 - [x] dependency audit
-- [ ] migration validation
+- [x] migration validation
 - [ ] branch protection
 - [ ] required checks before merge
 
 ---
+
+
+## Verified MVP Evidence
+
+The current CI suite now proves the following against the Cloudflare Workers runtime and a local D1 database:
+
+- [x] Worker module boots under workerd
+- [x] repository migrations apply successfully
+- [x] migrations are idempotent
+- [x] registry/model metadata boot successfully
+- [x] REST CRUD persists to D1
+- [x] RPC CRUD persists to D1
+- [x] Many2one references are validated before persistence
+- [x] D1 foreign keys reject invalid raw writes
+- [x] nullable Many2one values persist as `null`
+- [x] D1 atomic batches roll back on failure
+- [x] collection ordering is deterministic
+- [x] empty collection responses are deterministic
+- [x] malformed/oversized JSON fails closed
+- [x] domain values remain SQL-parameterized
+- [x] migration columns and foreign keys match the expected runtime schema
 
 # MVP 0.1 Release Gate
 
