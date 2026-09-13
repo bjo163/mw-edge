@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "pnpm test:unit && pnpm test:workers",
     "test:unit": "node --test test/*.test.js",
     "test:workers": "vitest run --config vitest.config.js",
@@ -20,6 +23,8 @@
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^10.10.0",
+    "prettier": "^3.9.6",
     "vitest": "^4.1.0",
     "wrangler": "^4.131.1"
   },
