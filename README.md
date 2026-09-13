@@ -1,60 +1,927 @@
 # MW Edge
 
-Model-driven edge backend with an Odoo-inspired ORM for Cloudflare Workers and D1.
+**Model-driven, multi-tenant BaaS for the edge with an Odoo-inspired ORM.**
 
-## MVP
+MW Edge is being built for Cloudflare Workers and D1 with a small, explicit core. The first goal is not to recreate all of Odoo or Supabase. The first goal is to make the model contract, query semantics, CRUD lifecycle, API surface, and D1 runtime correct and predictable.
 
-- Hono on Cloudflare Workers
-- Cloudflare D1
-- Drizzle as the SQL/query layer
-- Odoo-style model registry
-- `search`, `searchRead`, `browse`, `create`, `write`, `unlink`, `count`
-- Basic Odoo-style domains
-- `Many2one` metadata
-- Auto REST endpoints
-- RPC endpoint
+> **Current stage:** Foundation / ORM MVP  
+> **Primary runtime:** Cloudflare Workers  
+> **Primary database:** Cloudflare D1  
+> **HTTP layer:** Hono  
+> **SQL/query layer:** Drizzle
 
-## Setup
+---
 
-```bash
-pnpm install
-pnpm wrangler d1 create mw-edge-dev
+## Architecture
+
+```text
+Client
+  │
+  ▼
+Hono
+  │
+  ├── REST
+  └── RPC
+        │
+        ▼
+   MW Environment
+        │
+        ▼
+   Model Registry
+        │
+        ▼
+      MW ORM
+        │
+        ▼
+     Drizzle
+        │
+        ▼
+ Cloudflare D1
 ```
 
-Copy the returned D1 `database_id` into `wrangler.jsonc`.
+Long-term:
 
-Apply migrations locally:
-
-```bash
-pnpm db:migrate:local
-pnpm dev
+```text
+                         MW Edge
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+          ▼                 ▼                 ▼
+       Database            Auth            Storage
+          │                 │                 │
+        MW ORM             JWT               R2
+          │
+   Storage Resolver
+          │
+   ┌──────┼───────────┐
+   ▼      ▼           ▼
+  D1   PostgreSQL   future adapters
 ```
 
-Apply migrations remotely and deploy:
+---
 
-```bash
-pnpm db:migrate:remote
-pnpm deploy
+# Roadmap
+
+## Phase 0 — Repository & Runtime Foundation
+
+Goal: a minimal Cloudflare-native project that runs locally and can be deployed without unnecessary infrastructure.
+
+- [x] Create `mw-edge` repository
+- [x] Use JavaScript ESM
+- [x] Add Hono
+- [x] Add Cloudflare Workers entrypoint
+- [x] Add Wrangler configuration
+- [x] Add D1 binding placeholder `MW_DB`
+- [x] Add Drizzle ORM
+- [x] Add Drizzle Kit
+- [x] Add initial D1 migration
+- [x] Add `pnpm` scripts
+- [x] Add `.gitignore`
+- [x] Add MIT license
+- [x] Add health/root endpoint
+- [ ] Create real Cloudflare D1 database
+- [ ] Replace placeholder `database_id`
+- [ ] Verify local D1 migration
+- [ ] Verify `wrangler dev`
+- [ ] Verify remote D1 migration
+- [ ] Verify production `wrangler deploy`
+- [ ] Add separate dev/prod environment configuration
+- [ ] Add deterministic environment validation on startup
+
+### Phase 0 Definition of Done
+
+- [ ] Fresh clone can run with documented commands
+- [ ] Local database can be created from migrations
+- [ ] Worker boots without runtime errors
+- [ ] Production deployment succeeds
+- [ ] Root endpoint returns runtime/version information
+
+---
+
+## Phase 1 — ORM Core Contract
+
+Goal: establish the stable Odoo-inspired model API before adding platform features.
+
+### 1.1 Model Registry
+
+- [x] Add central `ModelRegistry`
+- [x] Register model by static `_name`
+- [x] Resolve model using `env.model(name)`
+- [x] Reject duplicate model names
+- [x] Reject unknown model names
+- [x] List registered model names
+- [x] Add `_description` metadata
+- [ ] Add immutable normalized model metadata
+- [ ] Validate model declaration during registry boot
+- [ ] Validate table binding during registry boot
+- [ ] Add registry introspection API
+- [ ] Add model metadata endpoint
+- [ ] Define reserved model names
+- [ ] Define reserved field names
+
+Target API:
+
+```js
+const Partner = env.model('res.partner')
 ```
 
-## Model API
+### 1.2 Fields
+
+Currently declared:
+
+- [x] `fields.Char()`
+- [x] `fields.Text()`
+- [x] `fields.Integer()`
+- [x] `fields.Float()`
+- [x] `fields.Boolean()`
+- [x] `fields.DateTime()`
+- [x] `fields.Selection()`
+- [x] `fields.Many2one()`
+
+Field behavior still required:
+
+- [ ] `required`
+- [ ] `default`
+- [ ] `readonly`
+- [ ] `index`
+- [ ] `unique`
+- [ ] `help`
+- [ ] `label/string`
+- [ ] value type validation
+- [ ] selection value validation
+- [ ] unknown field rejection
+- [ ] field normalization
+- [ ] automatic defaults before create
+- [ ] automatic write validation
+- [ ] automatic create validation
+- [ ] immutable `id`
+- [ ] immutable create timestamp
+- [ ] controlled update timestamp
+
+Future fields:
+
+- [ ] `Date`
+- [ ] `Json`
+- [ ] `Binary`
+- [ ] `One2many`
+- [ ] `Many2many`
+
+Deferred until later:
+
+- [ ] computed fields
+- [ ] related fields
+- [ ] inverse methods
+- [ ] onchange semantics
+- [ ] dependency graph
+
+### 1.3 Base CRUD
+
+Implemented:
+
+- [x] `browse(id)`
+- [x] `search(domain)`
+- [x] `searchRead(domain, fields)`
+- [x] `create(values)`
+- [x] record `write(values)`
+- [x] record `unlink()`
+- [x] `count(domain)`
+- [x] `limit`
+- [x] `offset`
+
+Required before ORM MVP is stable:
+
+- [ ] `read(fields)`
+- [ ] multi-record `write()`
+- [ ] multi-record `unlink()`
+- [ ] multi-create
+- [ ] explicit `exists()`
+- [ ] deterministic return contracts
+- [ ] consistent empty-result behavior
+- [ ] consistent ID coercion rules
+- [ ] validate values before SQL execution
+- [ ] reject writes to unknown fields
+- [ ] reject writes to protected fields
+- [ ] transaction helper
+- [ ] atomic multi-operation transaction
+- [ ] lifecycle hooks
+
+Potential lifecycle hooks:
+
+```text
+beforeCreate
+afterCreate
+beforeWrite
+afterWrite
+beforeUnlink
+afterUnlink
+```
+
+### 1.4 Record / Recordset Semantics
+
+Current MVP has a single `Record` wrapper.
+
+- [x] Single-record wrapper
+- [x] Record `write()`
+- [x] Record `unlink()`
+- [x] Record `toJSON()`
+- [ ] Introduce explicit `RecordSet`
+- [ ] Empty recordset
+- [ ] Single recordset
+- [ ] Multi-record recordset
+- [ ] `ids`
+- [ ] `first()`
+- [ ] `mapped()`
+- [ ] `filtered()`
+- [ ] `ensureOne()`
+- [ ] iteration contract
+- [ ] stable serialization contract
+
+Do not copy Odoo magic blindly. Recordset behavior must remain explicit and edge-runtime friendly.
+
+---
+
+## Phase 2 — Domain Query Engine
+
+Goal: support an Odoo-like domain syntax with deterministic translation to SQL.
+
+Current supported operators:
+
+- [x] `=`
+- [x] `!=`
+- [x] `>`
+- [x] `>=`
+- [x] `<`
+- [x] `<=`
+- [x] `like`
+- [x] `ilike`
+- [x] `not like`
+- [x] `in`
+- [x] implicit AND
+- [x] prefix OR operator `|`
+- [x] prefix AND operator `&`
+
+Still required:
+
+- [ ] `not in`
+- [ ] `not ilike`
+- [ ] unary NOT `!`
+- [ ] `is null`
+- [ ] `is not null`
+- [ ] boolean normalization
+- [ ] date/datetime normalization
+- [ ] field-aware value coercion
+- [ ] invalid operator diagnostics
+- [ ] invalid prefix-expression diagnostics
+- [ ] nested expression tests
+- [ ] empty `in` behavior
+- [ ] SQL parameter-safety tests
+- [ ] max domain complexity guard
+- [ ] query complexity budget
+
+Example:
+
+```js
+await Partner.searchRead(
+  [
+    ['active', '=', true],
+    '|',
+    ['name', 'ilike', 'EXATEL'],
+    ['email', 'ilike', '@exatel']
+  ],
+  ['id', 'name', 'email']
+)
+```
+
+Before declaring compatibility, domain behavior must be covered by automated tests rather than assumed to match Odoo.
+
+---
+
+## Phase 3 — Relations
+
+Goal: make relational models useful without creating cross-database complexity too early.
+
+### 3.1 Many2one
+
+Current state:
+
+- [x] `Many2one` field metadata
+- [x] D1 foreign key example for `res.partner.company_id`
+- [ ] verify comodel exists at registry boot
+- [ ] validate referenced ID
+- [ ] relation-aware serialization
+- [ ] optional relation expansion
+- [ ] relation field selection
+- [ ] relation-aware domain queries
+- [ ] relation deletion policy
+- [ ] clear nullability behavior
+
+Example target:
 
 ```js
 const Partner = env.model('res.partner')
 
-const partner = await Partner.create({
-  name: 'PT EXATEL',
-  active: true
-})
+const partner = await Partner.browse(1)
 
-const records = await Partner.searchRead(
-  [['active', '=', true]],
-  ['id', 'name']
-)
-
-await partner.write({ active: false })
-await partner.unlink()
+await partner.read([
+  'id',
+  'name',
+  'company_id'
+])
 ```
+
+### 3.2 One2many
+
+- [ ] field declaration
+- [ ] inverse-field validation
+- [ ] lazy relation lookup
+- [ ] relation serialization
+- [ ] pagination
+- [ ] nested reads
+
+### 3.3 Many2many
+
+- [ ] field declaration
+- [ ] junction-table convention
+- [ ] automatic junction metadata
+- [ ] add relation
+- [ ] remove relation
+- [ ] replace relations
+- [ ] relation query support
+
+### 3.4 Explicitly Deferred
+
+- [ ] cross-D1 relational joins
+- [ ] distributed foreign keys
+- [ ] automatic cross-database transactions
+
+For the first stable release, strongly related models should live in the same project database.
+
+---
+
+## Phase 4 — API Layer
+
+Goal: generate safe REST and RPC access from registered models.
+
+### 4.1 REST
+
+Already available:
+
+- [x] `GET /api/models`
+- [x] `GET /api/:model`
+- [x] `GET /api/:model/:id`
+- [x] `POST /api/:model`
+- [x] `PATCH /api/:model/:id`
+- [x] `DELETE /api/:model/:id`
+
+Required:
+
+- [ ] query-string domain support
+- [ ] field selection
+- [ ] limit
+- [ ] offset
+- [ ] ordering
+- [ ] total count
+- [ ] pagination metadata
+- [ ] standardized error envelope
+- [ ] standardized success envelope decision
+- [ ] request body validation
+- [ ] response serialization layer
+- [ ] maximum page size
+- [ ] maximum request body size
+- [ ] safe model exposure policy
+- [ ] safe field exposure policy
+- [ ] API versioning strategy
+
+### 4.2 RPC
+
+Already available:
+
+- [x] `POST /api/rpc`
+- [x] `search`
+- [x] `search_read`
+- [x] `browse`
+- [x] `create`
+- [x] `write`
+- [x] `unlink`
+- [x] `count`
+
+Required:
+
+- [ ] normalized method names
+- [ ] strict method allowlist
+- [ ] per-model method exposure
+- [ ] custom model methods
+- [ ] model-level RPC methods
+- [ ] record-level RPC methods
+- [ ] structured validation errors
+- [ ] method introspection
+- [ ] API versioning
+
+### 4.3 Error Contract
+
+- [ ] define error codes
+- [ ] distinguish validation errors
+- [ ] distinguish authorization errors
+- [ ] distinguish missing model
+- [ ] distinguish missing record
+- [ ] distinguish conflict/unique violation
+- [ ] hide internal SQL/runtime details
+- [ ] attach request ID
+- [ ] structured logs
+
+---
+
+## Phase 5 — Testing, Quality & CI
+
+Goal: no ORM semantics should rely on manual testing.
+
+### Unit Tests
+
+- [ ] registry tests
+- [ ] field declaration tests
+- [ ] field validation tests
+- [ ] domain compiler tests
+- [ ] CRUD tests
+- [ ] record tests
+- [ ] relation tests
+- [ ] error contract tests
+
+### Integration Tests
+
+- [ ] local D1 migration test
+- [ ] Worker request test
+- [ ] REST CRUD test
+- [ ] RPC CRUD test
+- [ ] transaction test
+- [ ] foreign-key behavior test
+- [ ] pagination test
+
+### Quality
+
+- [ ] ESLint
+- [ ] formatter
+- [ ] dependency audit
+- [ ] dead-code check
+- [ ] duplicate-code check
+- [ ] bundle-size tracking
+- [ ] runtime compatibility check
+- [ ] migration consistency check
+
+### GitHub Actions
+
+- [ ] install
+- [ ] lint
+- [ ] unit tests
+- [ ] integration tests
+- [ ] build/runtime validation
+- [ ] dependency audit
+- [ ] migration validation
+- [ ] branch protection
+- [ ] required checks before merge
+
+---
+
+# MVP 0.1 Release Gate
+
+**MW Edge 0.1 should not be called complete until all items below pass.**
+
+### Runtime
+
+- [ ] local Worker boots
+- [ ] production Worker deploys
+- [ ] local D1 works
+- [ ] remote D1 works
+- [ ] migrations are repeatable
+
+### ORM
+
+- [ ] model registry validated
+- [ ] field validation implemented
+- [ ] defaults implemented
+- [ ] required fields implemented
+- [ ] CRUD contract stable
+- [ ] record/recordset contract stable
+- [ ] domain compiler tested
+- [ ] Many2one usable end-to-end
+
+### API
+
+- [ ] REST CRUD tested
+- [ ] RPC CRUD tested
+- [ ] input validation
+- [ ] output serialization
+- [ ] consistent errors
+- [ ] pagination
+- [ ] request IDs
+
+### Quality
+
+- [ ] automated tests
+- [ ] CI green
+- [ ] no critical dependency vulnerabilities
+- [ ] README setup verified from clean clone
+- [ ] example app works
+
+---
+
+# Phase 6 — Security & Authentication
+
+This starts **after the ORM MVP contract is stable**.
+
+Goal: convert the ORM-backed API into a safe backend platform.
+
+### Identity
+
+- [ ] `auth.user`
+- [ ] password hashing strategy
+- [ ] session model
+- [ ] JWT access token
+- [ ] refresh token
+- [ ] API keys
+- [ ] API key hashing
+- [ ] API key scopes
+- [ ] key rotation
+- [ ] logout/revocation
+
+### Authorization
+
+Inspired by useful Odoo concepts, without copying its full complexity:
+
+- [ ] groups/roles
+- [ ] model ACL
+- [ ] create permission
+- [ ] read permission
+- [ ] write permission
+- [ ] unlink permission
+- [ ] record rules
+- [ ] field-level protection
+- [ ] system/admin bypass rules
+- [ ] default-deny policy decision
+- [ ] permission tests
+
+### Security Baseline
+
+- [ ] rate limiting
+- [ ] request size limits
+- [ ] brute-force protection
+- [ ] secret handling
+- [ ] CORS policy
+- [ ] secure headers
+- [ ] audit security events
+- [ ] sensitive-field masking
+- [ ] abuse protection
+
+---
+
+# Phase 7 — Multi-Tenant Control Plane
+
+Goal: evolve MW Edge from an ORM/API into a real BaaS.
+
+Recommended hierarchy:
+
+```text
+User
+  │
+  ▼
+Organization
+  │
+  ▼
+Project
+  │
+  ▼
+Environment
+  │
+  ▼
+Database
+```
+
+### 7.1 Control Database
+
+Create a dedicated platform/control database separate from application data.
+
+- [ ] `platform.user`
+- [ ] `platform.organization`
+- [ ] `platform.membership`
+- [ ] `platform.project`
+- [ ] `platform.environment`
+- [ ] `platform.api_key`
+- [ ] `platform.database`
+- [ ] `platform.plan`
+- [ ] `platform.usage`
+- [ ] `platform.audit`
+
+### 7.2 Organization
+
+- [ ] create organization
+- [ ] organization owner
+- [ ] organization members
+- [ ] roles
+- [ ] invitations
+- [ ] transfer ownership
+- [ ] suspend organization
+
+### 7.3 Project
+
+- [ ] create project
+- [ ] project slug
+- [ ] project API key
+- [ ] project settings
+- [ ] dev environment
+- [ ] production environment
+- [ ] delete/archive project
+- [ ] project status lifecycle
+
+### 7.4 Tenant Resolution
+
+Request flow target:
+
+```text
+Request
+   │
+   ▼
+API key / JWT
+   │
+   ▼
+Organization resolver
+   │
+   ▼
+Project resolver
+   │
+   ▼
+Environment resolver
+   │
+   ▼
+Database resolver
+   │
+   ▼
+MW ORM
+```
+
+Checklist:
+
+- [ ] resolve API key
+- [ ] resolve project
+- [ ] resolve environment
+- [ ] resolve database
+- [ ] attach tenant context
+- [ ] reject cross-tenant access
+- [ ] tenant isolation tests
+
+---
+
+# Phase 8 — Database Provisioning & Storage Resolver
+
+Goal: allow MW Edge to select storage without application code knowing the physical database.
+
+Target:
+
+```text
+env.model('res.partner')
+        │
+        ▼
+   Project Context
+        │
+        ▼
+ Storage Resolver
+        │
+   ┌────┼─────┐
+   ▼    ▼     ▼
+  D1   D1   future
+```
+
+### Project-per-D1
+
+Preferred first multi-tenant strategy:
+
+```text
+1 project environment = 1 D1 database
+```
+
+Checklist:
+
+- [ ] database registry
+- [ ] D1 provisioning
+- [ ] D1 database ID persistence
+- [ ] environment-to-D1 mapping
+- [ ] migration on provision
+- [ ] migration version tracking
+- [ ] database health status
+- [ ] database deletion lifecycle
+- [ ] provisioning rollback
+- [ ] provisioning idempotency
+- [ ] quota enforcement
+
+### Storage Policy
+
+Later:
+
+- [ ] `shared` strategy
+- [ ] `dedicated` strategy
+- [ ] `external` strategy
+- [ ] PostgreSQL adapter
+- [ ] storage adapter interface
+- [ ] storage capability discovery
+
+Do **not** implement model-per-database as the default. Models that frequently join or transact together should remain together.
+
+---
+
+# Phase 9 — BaaS Capabilities
+
+Only after ORM, security, and multi-tenancy are stable.
+
+## Storage
+
+Cloudflare R2:
+
+- [ ] buckets per project or namespace strategy
+- [ ] upload API
+- [ ] download API
+- [ ] signed URLs
+- [ ] metadata
+- [ ] access policy
+- [ ] size quota
+- [ ] MIME validation
+
+## Events
+
+- [ ] model create event
+- [ ] model write event
+- [ ] model unlink event
+- [ ] webhook subscriptions
+- [ ] webhook signing
+- [ ] retry
+- [ ] dead-letter handling
+- [ ] Cloudflare Queues integration
+
+## Realtime
+
+Potential Durable Objects layer:
+
+- [ ] subscription protocol
+- [ ] project channels
+- [ ] model channels
+- [ ] record channels
+- [ ] authorization
+- [ ] reconnect behavior
+- [ ] fan-out strategy
+
+## Functions
+
+- [ ] project functions
+- [ ] safe invocation
+- [ ] environment variables
+- [ ] secrets
+- [ ] logs
+- [ ] quotas
+
+---
+
+# Phase 10 — Developer Experience
+
+Goal: make MW Edge usable without manually editing infrastructure files.
+
+## CLI
+
+Target command surface:
+
+```text
+mw init
+mw dev
+mw model create
+mw migrate
+mw project create
+mw deploy
+```
+
+Checklist:
+
+- [ ] `mw init`
+- [ ] `mw dev`
+- [ ] `mw model create`
+- [ ] `mw migration create`
+- [ ] `mw migrate`
+- [ ] `mw project create`
+- [ ] `mw project list`
+- [ ] `mw deploy`
+- [ ] `mw doctor`
+
+## SDK
+
+- [ ] JavaScript SDK
+- [ ] authenticated client
+- [ ] model client
+- [ ] typed response option
+- [ ] pagination helpers
+- [ ] auth helpers
+- [ ] storage helpers
+
+Possible future:
+
+- [ ] TypeScript-first SDK
+- [ ] Python SDK
+- [ ] Rust SDK
+
+---
+
+# Phase 11 — Dashboard
+
+Dashboard is **not part of the initial MVP**.
+
+Eventually:
+
+- [ ] login
+- [ ] organization switcher
+- [ ] project switcher
+- [ ] environments
+- [ ] model explorer
+- [ ] record explorer
+- [ ] SQL/query console
+- [ ] API keys
+- [ ] members
+- [ ] usage
+- [ ] logs
+- [ ] storage browser
+- [ ] webhook management
+
+---
+
+# Phase 12 — Advanced ORM Features
+
+Do not start these before the basic contract is proven.
+
+- [ ] model inheritance
+- [ ] extension/inherit mechanism
+- [ ] computed fields
+- [ ] related fields
+- [ ] constraints
+- [ ] SQL constraints abstraction
+- [ ] context
+- [ ] company context
+- [ ] sequence service
+- [ ] soft delete
+- [ ] audit fields
+- [ ] change tracking
+- [ ] model methods
+- [ ] record methods
+- [ ] batched prefetch
+- [ ] relation prefetch
+- [ ] query planner
+- [ ] query budget
+- [ ] query explain/debug mode
+
+---
+
+# Non-Goals for the Initial MVP
+
+The following are intentionally **not** required for the first usable release:
+
+- [ ] recreating the Odoo UI framework
+- [ ] XML views
+- [ ] Odoo module compatibility
+- [ ] PostgreSQL parity
+- [ ] distributed transactions
+- [ ] model-per-D1 by default
+- [ ] cross-D1 joins
+- [ ] realtime
+- [ ] R2 file storage
+- [ ] billing
+- [ ] marketplace
+- [ ] visual workflow builder
+- [ ] AI features
+- [ ] Kubernetes
+- [ ] Docker requirement
+- [ ] VPS requirement
+
+---
+
+# Current Models
+
+## `res.company`
+
+Current fields:
+
+- [x] `id`
+- [x] `name`
+- [x] `active`
+- [x] `created_at`
+- [x] `updated_at`
+
+## `res.partner`
+
+Current fields:
+
+- [x] `id`
+- [x] `name`
+- [x] `email`
+- [x] `active`
+- [x] `company_id`
+- [x] `created_at`
+- [x] `updated_at`
+
+---
+
+# Current API
 
 ## REST
 
@@ -65,14 +932,6 @@ GET    /api/res.partner/:id
 POST   /api/res.partner
 PATCH  /api/res.partner/:id
 DELETE /api/res.partner/:id
-```
-
-Create a partner:
-
-```bash
-curl -X POST http://localhost:8787/api/res.partner \
-  -H 'content-type: application/json' \
-  -d '{"name":"PT EXATEL","email":"info@example.com"}'
 ```
 
 ## RPC
@@ -92,42 +951,131 @@ Example:
 }
 ```
 
-## Current models
+---
 
-- `res.company`
-- `res.partner`
+# Setup
 
-## MVP boundaries
+Install:
 
-Not implemented yet:
-
-- authentication
-- ACL / record rules
-- multi-tenant control plane
-- project-per-D1 routing
-- One2many / Many2many
-- computed fields
-- model inheritance
-- cross-database relations
-- realtime
-- R2 storage
-
-These are intentionally deferred until the model and query contracts are stable.
-
-## Direction
-
-MW Edge is intended to evolve into a model-driven, multi-tenant BaaS for the edge:
-
-```text
-Client
-  ↓
-Hono / REST / RPC
-  ↓
-MW ORM
-  ↓
-Storage Resolver
-  ↓
-Cloudflare D1
+```bash
+pnpm install
 ```
 
-The first milestone is intentionally focused on getting the model contract, domain queries, CRUD semantics, and D1 runtime correct before adding the control plane.
+Create D1:
+
+```bash
+pnpm wrangler d1 create mw-edge-dev
+```
+
+Copy the returned `database_id` into `wrangler.jsonc`.
+
+Apply migrations locally:
+
+```bash
+pnpm db:migrate:local
+pnpm dev
+```
+
+Apply migrations remotely and deploy:
+
+```bash
+pnpm db:migrate:remote
+pnpm deploy
+```
+
+---
+
+# Model API Example
+
+```js
+const Partner = env.model('res.partner')
+
+const partner = await Partner.create({
+  name: 'PT EXATEL',
+  active: true
+})
+
+const records = await Partner.searchRead(
+  [['active', '=', true]],
+  ['id', 'name']
+)
+
+await partner.write({
+  active: false
+})
+
+await partner.unlink()
+```
+
+---
+
+# REST Example
+
+```bash
+curl -X POST http://localhost:8787/api/res.partner \
+  -H 'content-type: application/json' \
+  -d '{"name":"PT EXATEL","email":"info@example.com"}'
+```
+
+---
+
+# Engineering Principles
+
+MW Edge should stay small and predictable.
+
+- [x] Cloudflare-native first
+- [x] model-driven API
+- [x] Odoo-inspired naming and ergonomics
+- [x] explicit model registry
+- [x] D1-first MVP
+- [ ] fail closed on authorization
+- [ ] validate at boundaries
+- [ ] avoid hidden global state
+- [ ] avoid hardcoded tenant/database IDs
+- [ ] avoid magic that cannot be introspected
+- [ ] keep storage behind an adapter boundary
+- [ ] make migrations deterministic
+- [ ] make every public contract testable
+- [ ] keep control-plane data separate from project data
+- [ ] prefer one project database over one database per model
+- [ ] optimize only after measurement
+
+---
+
+# Release Sequence
+
+The intended order is:
+
+```text
+0. Runtime Foundation
+        ↓
+1. ORM Core
+        ↓
+2. Domain Engine
+        ↓
+3. Relations
+        ↓
+4. REST / RPC
+        ↓
+5. Tests / CI
+        ↓
+      v0.1
+        ↓
+6. Auth / ACL
+        ↓
+7. Multi-Tenant Control Plane
+        ↓
+8. Project-per-D1 Provisioning
+        ↓
+      v0.2
+        ↓
+9. Storage / Events / Realtime
+        ↓
+10. CLI / SDK
+        ↓
+11. Dashboard
+        ↓
+     BaaS
+```
+
+The roadmap is intentionally ordered. Later phases should not be used to hide unfinished foundations in earlier phases.
