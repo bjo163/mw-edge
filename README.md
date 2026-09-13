@@ -191,9 +191,9 @@ Implemented:
 Required before ORM MVP is stable:
 
 - [x] `read(fields)`
-- [ ] multi-record `write()`
-- [ ] multi-record `unlink()`
-- [ ] multi-create
+- [x] multi-record `write()`
+- [x] multi-record `unlink()`
+- [x] multi-create
 - [x] explicit `exists()`
 - [ ] deterministic return contracts
 - [ ] consistent empty-result behavior
@@ -224,17 +224,17 @@ Current MVP has a single `Record` wrapper.
 - [x] Record `write()`
 - [x] Record `unlink()`
 - [x] Record `toJSON()`
-- [ ] Introduce explicit `RecordSet`
-- [ ] Empty recordset
-- [ ] Single recordset
-- [ ] Multi-record recordset
-- [ ] `ids`
-- [ ] `first()`
-- [ ] `mapped()`
-- [ ] `filtered()`
-- [ ] `ensureOne()`
-- [ ] iteration contract
-- [ ] stable serialization contract
+- [x] Introduce explicit `RecordSet`
+- [x] Empty recordset
+- [x] Single recordset
+- [x] Multi-record recordset
+- [x] `ids`
+- [x] `first()`
+- [x] `mapped()`
+- [x] `filtered()`
+- [x] `ensureOne()`
+- [x] iteration contract
+- [x] stable serialization contract
 
 Do not copy Odoo magic blindly. Recordset behavior must remain explicit and edge-runtime friendly.
 
@@ -401,6 +401,7 @@ Already available:
 - [x] `search_read`
 - [x] `browse`
 - [x] `create`
+- [x] `create_many`
 - [x] `write`
 - [x] `unlink`
 - [x] `count`
@@ -442,7 +443,7 @@ Goal: no ORM semantics should rely on manual testing.
 - [x] field validation tests
 - [x] domain compiler tests
 - [ ] CRUD tests
-- [ ] record tests
+- [x] record tests
 - [ ] relation tests
 - [x] error contract tests
 
