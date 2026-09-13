@@ -518,7 +518,7 @@ Goal: no ORM semantics should rely on manual testing.
 ### Quality
 
 - [x] automated tests
-- [ ] CI green
+- [x] CI green
 - [x] no critical dependency vulnerabilities
 - [ ] README setup verified from clean clone
 - [ ] example app works
