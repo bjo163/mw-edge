@@ -7,16 +7,30 @@ function missingRecord(model, id) {
   throw new NotFoundError(`Record not found: ${model}(${id})`, { model, id })
 }
 
+function restModel(c, name) {
+  const mw = c.get('mw')
+  mw.registry.assertRest(name)
+  return mw.model(name)
+}
+
 export function createApi() {
   const api = new Hono()
 
   api.get('/models', c => c.json({
-    models: c.get('mw').registry.describeAll()
+    models: c.get('mw').registry.describeApi()
   }))
 
-  api.get('/models/:model', c => c.json(
-    c.get('mw').registry.describe(c.req.param('model'))
-  ))
+  api.get('/models/:model', c => {
+    const registry = c.get('mw').registry
+    const model = c.req.param('model')
+    const meta = registry.metadata(model)
+
+    if (!meta.api.rest && meta.api.rpc.length === 0) {
+      registry.assertRest(model)
+    }
+
+    return c.json(registry.describe(model))
+  })
 
   api.post('/rpc', async c => {
     const {
@@ -35,7 +49,9 @@ export function createApi() {
       throw new ValidationError('RPC model and method are required')
     }
 
-    const target = c.get('mw').model(model)
+    const mw = c.get('mw')
+    mw.registry.assertRpc(model, method)
+    const target = mw.model(model)
 
     switch (method) {
       case 'search': {
@@ -77,7 +93,7 @@ export function createApi() {
   })
 
   api.get('/:model', async c => {
-    const target = c.get('mw').model(c.req.param('model'))
+    const target = restModel(c, c.req.param('model'))
     const query = parseCollectionQuery(c.req.query())
     const data = await target.searchRead(query.domain, query.fields, {
       limit: query.limit,
@@ -100,14 +116,14 @@ export function createApi() {
   api.get('/:model/:id', async c => {
     const modelName = c.req.param('model')
     const id = c.req.param('id')
-    const model = c.get('mw').model(modelName)
+    const model = restModel(c, modelName)
     const record = await model.browse(id)
     if (!record) missingRecord(modelName, id)
     return c.json(record.toJSON())
   })
 
   api.post('/:model', async c => {
-    const model = c.get('mw').model(c.req.param('model'))
+    const model = restModel(c, c.req.param('model'))
     const record = await model.create(await readJsonObject(c))
     return c.json(record.toJSON(), 201)
   })
@@ -115,7 +131,7 @@ export function createApi() {
   api.patch('/:model/:id', async c => {
     const modelName = c.req.param('model')
     const id = c.req.param('id')
-    const model = c.get('mw').model(modelName)
+    const model = restModel(c, modelName)
     const record = await model.browse(id)
     if (!record) missingRecord(modelName, id)
     await record.write(await readJsonObject(c))
@@ -125,7 +141,7 @@ export function createApi() {
   api.delete('/:model/:id', async c => {
     const modelName = c.req.param('model')
     const id = c.req.param('id')
-    const model = c.get('mw').model(modelName)
+    const model = restModel(c, modelName)
     const record = await model.browse(id)
     if (!record) missingRecord(modelName, id)
     await record.unlink()
