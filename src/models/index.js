@@ -5,3 +5,4 @@ import { ResPartner } from './res.partner.js'
 export const registry = new ModelRegistry()
   .register(ResCompany)
   .register(ResPartner)
+  .finalize()
