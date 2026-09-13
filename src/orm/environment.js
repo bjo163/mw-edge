@@ -3,7 +3,7 @@ import { ValidationError } from './errors.js'
 import { ModelSet } from './model.js'
 
 export function createEnvironment(binding, registry) {
-  if (!binding || typeof binding.prepare !== 'function') {
+  if (!binding || typeof binding.prepare !== 'function' || typeof binding.batch !== 'function') {
     throw new ValidationError('MW_DB D1 binding is missing or invalid')
   }
 
@@ -17,6 +17,24 @@ export function createEnvironment(binding, registry) {
   const environment = {
     db,
     registry,
+
+    statement(sql, ...params) {
+      if (typeof sql !== 'string' || !sql.trim()) {
+        throw new ValidationError('SQL statement must be a non-empty string')
+      }
+
+      const statement = binding.prepare(sql)
+      return params.length ? statement.bind(...params) : statement
+    },
+
+    async atomic(statements) {
+      if (!Array.isArray(statements) || statements.length === 0) {
+        throw new ValidationError('atomic() expects at least one prepared statement')
+      }
+
+      return binding.batch(statements)
+    },
+
     model(name) {
       if (!cache.has(name)) {
         cache.set(
