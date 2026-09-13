@@ -29,6 +29,118 @@ describe('MW Edge Worker + D1 integration', () => {
     })
   })
 
+  it('keeps migrations aligned with the runtime schema', async () => {
+    const companyColumns = await env.MW_DB.prepare(
+      'PRAGMA table_info(res_company)'
+    ).all()
+    const partnerColumns = await env.MW_DB.prepare(
+      'PRAGMA table_info(res_partner)'
+    ).all()
+    const partnerForeignKeys = await env.MW_DB.prepare(
+      'PRAGMA foreign_key_list(res_partner)'
+    ).all()
+
+    expect(companyColumns.results.map(column => column.name)).toEqual([
+      'id',
+      'name',
+      'active',
+      'created_at',
+      'updated_at'
+    ])
+
+    expect(partnerColumns.results.map(column => column.name)).toEqual([
+      'id',
+      'name',
+      'email',
+      'active',
+      'company_id',
+      'created_at',
+      'updated_at'
+    ])
+
+    expect(partnerForeignKeys.results).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          table: 'res_company',
+          from: 'company_id',
+          to: 'id'
+        })
+      ])
+    )
+  })
+
+  it('returns deterministic empty collection contracts', async () => {
+    const rest = await request('/api/res.partner?fields=id,name')
+    expect(rest.status).toBe(200)
+    expect(await json(rest)).toEqual({
+      data: [],
+      meta: {
+        total: 0,
+        limit: 100,
+        offset: 0,
+        returned: 0,
+        has_more: false,
+        next_offset: null
+      }
+    })
+
+    const rpc = await request('/api/rpc', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'res.partner',
+        method: 'search_read',
+        domain: [],
+        fields: ['id', 'name']
+      })
+    })
+
+    expect(rpc.status).toBe(200)
+    expect(await json(rpc)).toEqual([])
+  })
+
+  it('allows nullable Many2one values and preserves them as null', async () => {
+    const response = await request('/api/res.partner', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Standalone Partner',
+        company_id: null
+      })
+    })
+
+    expect(response.status).toBe(201)
+    expect((await json(response)).company_id).toBeNull()
+  })
+
+  it('keeps domain values parameterized against SQL injection strings', async () => {
+    const attack = "x' OR 1=1 --"
+
+    const create = await request('/api/res.partner', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: attack })
+    })
+
+    expect(create.status).toBe(201)
+
+    const domain = encodeURIComponent(JSON.stringify([['name', '=', attack]]))
+    const response = await request(
+      `/api/res.partner?fields=id,name&domain=${domain}`
+    )
+    const body = await json(response)
+
+    expect(response.status).toBe(200)
+    expect(body.data).toHaveLength(1)
+    expect(body.data[0].name).toBe(attack)
+
+    const table = await env.MW_DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'res_partner'"
+    ).first()
+
+    expect(table.name).toBe('res_partner')
+  })
+
   it('runs REST CRUD against real local D1 storage', async () => {
     const companyResponse = await request('/api/res.company', {
       method: 'POST',
