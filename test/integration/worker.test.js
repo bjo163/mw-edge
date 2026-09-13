@@ -121,6 +121,45 @@ describe('MW Edge Worker + D1 integration', () => {
     ])
   })
 
+  it('supports deterministic Odoo-style ordering', async () => {
+    for (const name of ['Alpha', 'Zulu']) {
+      const response = await request('/api/res.company', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+      expect(response.status).toBe(201)
+    }
+
+    const response = await request(
+      '/api/res.company?fields=id,name&order=name%20desc'
+    )
+    const body = await json(response)
+
+    expect(response.status).toBe(200)
+    expect(body.data.map(record => record.name)).toEqual(['Zulu', 'Alpha'])
+  })
+
+  it('rejects malformed and oversized JSON before ORM execution', async () => {
+    const malformed = await request('/api/res.company', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{'
+    })
+
+    expect(malformed.status).toBe(400)
+    expect((await json(malformed)).error.code).toBe('VALIDATION_ERROR')
+
+    const oversized = await request('/api/res.company', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'x'.repeat(70 * 1024) })
+    })
+
+    expect(oversized.status).toBe(413)
+    expect((await json(oversized)).error.code).toBe('PAYLOAD_TOO_LARGE')
+  })
+
   it('fails closed when Many2one points to a missing record', async () => {
     const response = await request('/api/res.partner', {
       method: 'POST',
