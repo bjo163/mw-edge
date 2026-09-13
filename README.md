@@ -195,14 +195,14 @@ Required before ORM MVP is stable:
 - [x] multi-record `unlink()`
 - [x] multi-create
 - [x] explicit `exists()`
-- [ ] deterministic return contracts
+- [x] deterministic return contracts
 - [ ] consistent empty-result behavior
 - [x] consistent ID coercion rules
 - [x] validate values before SQL execution
 - [x] reject writes to unknown fields
 - [x] reject writes to protected fields
-- [ ] transaction helper
-- [ ] atomic multi-operation transaction
+- [x] transaction helper
+- [x] atomic multi-operation transaction
 - [ ] lifecycle hooks
 
 Potential lifecycle hooks:
@@ -307,7 +307,7 @@ Current state:
 - [x] `Many2one` field metadata
 - [x] D1 foreign key example for `res.partner.company_id`
 - [x] verify comodel exists at registry boot
-- [ ] validate referenced ID
+- [x] validate referenced ID
 - [ ] relation-aware serialization
 - [ ] optional relation expansion
 - [ ] relation field selection
@@ -379,15 +379,15 @@ Required:
 - [x] field selection
 - [x] limit
 - [x] offset
-- [ ] ordering
+- [x] ordering
 - [x] total count
 - [x] pagination metadata
 - [ ] standardized error envelope
 - [ ] standardized success envelope decision
-- [ ] request body validation
+- [x] request body validation
 - [ ] response serialization layer
 - [x] maximum page size
-- [ ] maximum request body size
+- [x] maximum request body size
 - [ ] safe model exposure policy
 - [ ] safe field exposure policy
 - [ ] API versioning strategy
@@ -414,7 +414,7 @@ Required:
 - [ ] custom model methods
 - [ ] model-level RPC methods
 - [ ] record-level RPC methods
-- [ ] structured validation errors
+- [x] structured validation errors
 - [ ] method introspection
 - [ ] API versioning
 
@@ -449,12 +449,12 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### Integration Tests
 
-- [ ] local D1 migration test
-- [ ] Worker request test
-- [ ] REST CRUD test
-- [ ] RPC CRUD test
-- [ ] transaction test
-- [ ] foreign-key behavior test
+- [x] local D1 migration test
+- [x] Worker request test
+- [x] REST CRUD test
+- [x] RPC CRUD test
+- [x] transaction test
+- [x] foreign-key behavior test
 - [x] pagination test
 
 ### Quality
@@ -473,8 +473,8 @@ Goal: no ORM semantics should rely on manual testing.
 - [x] install
 - [ ] lint
 - [x] unit tests
-- [ ] integration tests
-- [ ] build/runtime validation
+- [x] integration tests
+- [x] build/runtime validation
 - [x] dependency audit
 - [ ] migration validation
 - [ ] branch protection
@@ -488,11 +488,11 @@ Goal: no ORM semantics should rely on manual testing.
 
 ### Runtime
 
-- [ ] local Worker boots
+- [x] local Worker boots
 - [ ] production Worker deploys
-- [ ] local D1 works
+- [x] local D1 works
 - [ ] remote D1 works
-- [ ] migrations are repeatable
+- [x] migrations are repeatable
 
 ### ORM
 
@@ -503,14 +503,14 @@ Goal: no ORM semantics should rely on manual testing.
 - [ ] CRUD contract stable
 - [ ] record/recordset contract stable
 - [x] domain compiler tested
-- [ ] Many2one usable end-to-end
+- [x] Many2one usable end-to-end
 
 ### API
 
-- [ ] REST CRUD tested
-- [ ] RPC CRUD tested
-- [ ] input validation
-- [ ] output serialization
+- [x] REST CRUD tested
+- [x] RPC CRUD tested
+- [x] input validation
+- [x] output serialization
 - [x] consistent errors
 - [x] pagination
 - [x] request IDs
@@ -929,7 +929,7 @@ Current fields:
 ```text
 GET    /api/models
 GET    /api/models/:model
-GET    /api/res.partner?fields=id,name&limit=20&offset=0
+GET    /api/res.partner?fields=id,name&order=name%20desc&limit=20&offset=0
 GET    /api/res.partner/:id
 POST   /api/res.partner
 PATCH  /api/res.partner/:id
@@ -952,6 +952,27 @@ Example:
   "fields": ["id", "name", "email"]
 }
 ```
+
+---
+
+---
+
+# Testing
+
+MW Edge uses two complementary test layers:
+
+```bash
+pnpm test:unit
+pnpm test:workers
+pnpm test
+```
+
+- `test:unit` runs fast Node.js contract tests for registry, fields, domains, recordsets, request parsing, and error behavior.
+- `test:workers` runs inside the Cloudflare Workers runtime with a real local D1 binding and applies the repository migrations before exercising HTTP routes.
+- D1 migrations are applied twice in the test setup to verify idempotence.
+- Integration coverage includes Worker boot, REST CRUD, RPC CRUD, Many2one validation, raw foreign-key enforcement, ordering, payload guards, and atomic batch rollback.
+
+The test-only Worker configuration lives in `wrangler.test.jsonc`; production credentials are not required for the local integration suite.
 
 ---
 
@@ -1036,7 +1057,7 @@ MW Edge should stay small and predictable.
 - [ ] avoid hardcoded tenant/database IDs
 - [x] avoid magic that cannot be introspected
 - [ ] keep storage behind an adapter boundary
-- [ ] make migrations deterministic
+- [x] make migrations deterministic
 - [ ] make every public contract testable
 - [ ] keep control-plane data separate from project data
 - [ ] prefer one project database over one database per model
