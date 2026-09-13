@@ -75,41 +75,6 @@ function normalizeApi(model) {
   })
 }
 
-function normalizeApi(model) {
-  if (model._api === undefined) {
-    return Object.freeze({
-      rest: false,
-      rpc: Object.freeze([])
-    })
-  }
-
-  if (!isObject(model._api)) {
-    throw new ValidationError(`Model ${model._name} _api must be an object`)
-  }
-
-  const rpc = model._api.rpc ?? []
-
-  if (!Array.isArray(rpc)) {
-    throw new ValidationError(`Model ${model._name} _api.rpc must be an array`)
-  }
-
-  const methods = [...new Set(rpc)]
-
-  for (const method of methods) {
-    if (typeof method !== 'string' || !API_METHOD.test(method)) {
-      throw new ValidationError(`Invalid RPC method exposure: ${method}`, {
-        model: model._name,
-        method
-      })
-    }
-  }
-
-  return Object.freeze({
-    rest: model._api.rest === true,
-    rpc: Object.freeze(methods)
-  })
-}
-
 function validateSelection(field, value, name) {
   const allowed = field.selection.map(option => Array.isArray(option) ? option[0] : option)
   if (!allowed.includes(value)) {
@@ -168,12 +133,6 @@ export function normalizeId(value) {
 export function validateModelDefinition(model) {
   if (typeof model?._name !== 'string' || !MODEL_NAME.test(model._name)) {
     throw new ValidationError('Model _name must use dotted lowercase notation', { model: model?._name })
-  }
-
-  if (RESERVED_MODEL_SET.has(model._name)) {
-    throw new ValidationError(`Model name is reserved by MW Edge: ${model._name}`, {
-      model: model._name
-    })
   }
 
   if (RESERVED_MODEL_SET.has(model._name)) {
