@@ -14,6 +14,12 @@ export class ValidationError extends MwError {
   }
 }
 
+export class AccessError extends MwError {
+  constructor(message = 'Access denied', details) {
+    super(message, { code: 'ACCESS_DENIED', status: 403, details })
+  }
+}
+
 export class PayloadTooLargeError extends MwError {
   constructor(message = 'Request body is too large', details) {
     super(message, { code: 'PAYLOAD_TOO_LARGE', status: 413, details })
