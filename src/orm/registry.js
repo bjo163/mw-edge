@@ -1,17 +1,64 @@
+import { NotFoundError, ValidationError } from './errors.js'
+import { validateModelDefinition } from './validation.js'
+
 export class ModelRegistry {
   #models = new Map()
+  #metadata = new Map()
+  #finalized = false
 
   register(model) {
-    if (!model._name) throw new Error('Model requires static _name')
-    if (this.#models.has(model._name)) throw new Error(`Model already registered: ${model._name}`)
-    this.#models.set(model._name, model)
+    if (this.#finalized) throw new ValidationError('Registry is already finalized')
+
+    const meta = validateModelDefinition(model)
+
+    if (this.#models.has(meta.name)) {
+      throw new ValidationError(`Model already registered: ${meta.name}`)
+    }
+
+    this.#models.set(meta.name, model)
+    this.#metadata.set(meta.name, meta)
+    return this
+  }
+
+  finalize() {
+    for (const [modelName, meta] of this.#metadata) {
+      for (const [fieldName, field] of Object.entries(meta.fields)) {
+        if (field.type === 'many2one' && !this.#models.has(field.comodel)) {
+          throw new ValidationError(
+            `Unknown comodel ${field.comodel} on ${modelName}.${fieldName}`,
+            { model: modelName, field: fieldName, comodel: field.comodel }
+          )
+        }
+      }
+    }
+
+    this.#finalized = true
     return this
   }
 
   get(name) {
     const model = this.#models.get(name)
-    if (!model) throw new Error(`Unknown model: ${name}`)
+    if (!model) throw new NotFoundError(`Unknown model: ${name}`, { model: name })
     return model
+  }
+
+  metadata(name) {
+    const meta = this.#metadata.get(name)
+    if (!meta) throw new NotFoundError(`Unknown model: ${name}`, { model: name })
+    return meta
+  }
+
+  describe(name) {
+    const meta = this.metadata(name)
+    return {
+      name: meta.name,
+      description: meta.description,
+      fields: meta.fields
+    }
+  }
+
+  describeAll() {
+    return this.names().map(name => this.describe(name))
   }
 
   has(name) {
